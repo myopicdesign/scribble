@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handwrite Title Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+@font-face {
+  font-family: 'Shadows Into Light';
+  font-style: normal;
+  font-weight: 400;
+  src: url('img/ShadowsIntoLight-Regular.ttf') format('truetype');
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webp-hero/0.0.2/webp-hero.bundle.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f4f0e8;
+  --paper: #fdf8f0;
+  --ink: #1a1208;
+  --accent: #c0392b;
+  --accent2: #8b6914;
+  --ui-bg: #ede8de;
+  --ui-border: #ccc4b0;
+  --radius: 4px;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  color: var(--ink);
+}
+
+h1 {
+  font-family: 'Shadows Into Light', cursive;
+  font-weight: 400;
+  font-size: 2.8rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+
+.subtitle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--accent2);
+  margin-bottom: 40px;
+}
+
+/* PREVIEW AREA */
+.preview-wrap {
+  width: 500px;
+  height: 180px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+#preview-text {
+  font-family: 'Shadows Into Light', cursive;
+  font-weight: 400;
+  font-size: 5rem;
+  color: var(--ink);
+  line-height: 1;
+  text-align: center;
+  position: absolute !important;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+  z-index: 1;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* ===== ANIMATIONS ===== */
+#preview-text .wiggle-static  { display: block; }
+#preview-text .wiggle-animated { display: none; }
+
+@keyframes wiggle {
+  0%   { transform: skewX(0deg)     skewY(0deg)     translateY(1.5px); }
+  17%  { transform: skewX(1.2deg)   skewY(0.25deg)  translate(-2px, -2px); }
+  32%  { transform: skewX(1deg)     skewY(0.1deg)   translate(0px, 0px); }
+  48%  { transform: skewX(0deg)     skewY(0deg)     translate(0px, 0px); }
+  63%  { transform: skewX(-1.2deg)  skewY(-0.25deg) translate(2px, 0px); }
+  79%  { transform: skewX(-1deg)    skewY(0.2deg)   translate(0px, -2px); }
+  100% { transform: skewX(0deg)     skewY(0deg)     translate(0px, 0px); }
+}
+
+.anim-wiggle #preview-text .wiggle-static { filter: url(#wiggle-disp-static); }
+.anim-wiggle #preview-text .wiggle-animated {
+  display: block;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  text-align: center;
+  animation-name: wiggle;
+  animation-duration: 550ms;
+  animation-iteration-count: infinite;
+  filter: url(#wiggle-disp);
+}
+
+
+/* ===== CONTROLS ===== */
+.controls {
+  width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-row { display: flex; gap: 10px; align-items: center; }
+
+#text-input {
+  flex: 1;
+  font-family: 'Shadows Into Light', cursive;
+  font-weight: 400;
+  font-size: 1.8rem;
+  background: var(--paper);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+}
+#text-input:focus { border-color: var(--accent); }
+
+.size-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 160px; height: 3px;
+  background: var(--ui-border);
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  cursor: pointer;
+}
+
+.anim-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.anim-btn {
+  padding: 10px 22px;
+  border: 1.5px solid var(--ui-border);
+  background: var(--ui-bg);
+  border-radius: var(--radius);
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.15s;
+}
+.anim-btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.anim-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.stop-btn {
+  padding: 10px 22px;
+  border: 1.5px solid var(--ui-border);
+  background: transparent;
+  border-radius: var(--radius);
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  color: var(--accent2);
+}
+.stop-btn:hover { border-color: var(--accent2); }
+
+.row-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--accent2);
+  min-width: 70px;
+}
+
+.color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.color-swatch {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.color-swatch:hover, .color-swatch.active {
+  border-color: var(--ink);
+  transform: scale(1.15);
+}
+
+.intensity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  visibility: hidden;
+  pointer-events: none;
+}
+.intensity-row.visible { visibility: visible; pointer-events: auto; }
+
+.divider { width: 100%; height: 1px; background: var(--ui-border); }
+
+/* EXPORT BUTTON */
+.export-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.export-mode-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.export-mode-btn {
+  padding: 8px 16px;
+  border: 1.5px solid var(--ui-border);
+  background: var(--ui-bg);
+  border-radius: var(--radius);
+  font-family: 'Courier New', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.15s;
+}
+.export-mode-btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.export-mode-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+#export-btn {
+  padding: 12px 28px;
+  border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: var(--radius);
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#export-btn:hover { background: var(--accent); border-color: var(--accent); }
+#export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.export-hint {
+  font-size: 0.62rem;
+  color: var(--accent2);
+  letter-spacing: 0.08em;
+  width: 100%;
+  margin-top: -8px;
+}
+
+#export-status {
+  font-size: 0.68rem;
+  color: var(--accent2);
+  letter-spacing: 0.1em;
+}
+
+.progress-bar-wrap {
+  width: 160px;
+  height: 3px;
+  background: var(--ui-border);
+  border-radius: 2px;
+  overflow: hidden;
+  display: none;
+}
+.progress-bar-wrap.visible { display: block; }
+#progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--ink);
+  transition: width 0.1s linear;
+}
+</style>
+</head>
+<body>
+
+<h1>Handwrite</h1>
+<p class="subtitle">Title Animation Generator</p>
+
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="wiggle-disp" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="linearRGB">
+      <feTurbulence id="fe-turb" type="turbulence" baseFrequency="0.018 0.032" numOctaves="2" seed="1" result="noise"/>
+      <feDisplacementMap id="fe-disp" in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="wiggle-disp-static" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="linearRGB">
+      <feTurbulence id="fe-turb-static" type="turbulence" baseFrequency="0.018 0.032" numOctaves="2" seed="1" result="noise"/>
+      <feDisplacementMap id="fe-disp-static" in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="preview-wrap" id="preview-wrap">
+  <span id="preview-text" data-text="Titolo">
+    <span class="wiggle-static">Titolo</span>
+    <span class="wiggle-animated">Titolo</span>
+  </span>
+</div>
+
+<div class="controls">
+
+  <div class="input-row">
+    <input type="text" id="text-input" value="Titolo" maxlength="30" placeholder="Scrivi qui...">
+  </div>
+
+  <div class="size-row">
+    <span class="row-label">Dimensione</span>
+    <input type="range" id="size-slider" min="2" max="12" value="5" step="0.5">
+    <span id="size-val">5rem</span>
+  </div>
+
+  <div class="color-row">
+    <span class="row-label">Colore</span>
+    <span class="color-swatch active" data-color="#1a1208" style="background:#1a1208"></span>
+    <span class="color-swatch" data-color="#ffffff" style="background:#ffffff; border-color:var(--ui-border)"></span>
+    <span class="color-swatch" data-color="#c0392b" style="background:#c0392b"></span>
+    <span class="color-swatch" data-color="#2c3e7a" style="background:#2c3e7a"></span>
+    <span class="color-swatch" data-color="#1a5c2a" style="background:#1a5c2a"></span>
+    <span class="color-swatch" data-color="#7a4f1a" style="background:#7a4f1a"></span>
+    <input type="color" id="custom-color" value="#1a1208" title="Colore personalizzato"
+      style="width:24px;height:24px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none;">
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="anim-buttons">
+    <span class="row-label" style="align-self:center">Animazione</span>
+    <button class="anim-btn" data-anim="wiggle">〜 Wiggle</button>
+    <button class="stop-btn" id="stop-btn">◻ Stop</button>
+  </div>
+
+  <div class="intensity-row" id="intensity-row">
+    <span class="row-label">Intensità</span>
+    <input type="range" id="intensity-slider" min="0.1" max="3" value="1" step="0.05">
+    <span id="intensity-val">1×</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="export-row">
+    <div class="export-mode-row">
+    </div>
+    <p class="export-hint" id="export-hint">GIF animata con trasparenza – importabile in CapCut, After Effects e ovunque</p>
+    <button id="export-btn">⬇ Esporta GIF</button>
+    <div class="progress-bar-wrap" id="progress-wrap">
+      <div id="progress-bar"></div>
+    </div>
+    <span id="export-status"></span>
+  </div>
+
+</div>
+
+<script>
+const previewText     = document.getElementById('preview-text');
+const previewWrap     = document.getElementById('preview-wrap');
+const textInput       = document.getElementById('text-input');
+const sizeSlider      = document.getElementById('size-slider');
+const sizeVal         = document.getElementById('size-val');
+const animBtns        = document.querySelectorAll('.anim-btn');
+const stopBtn         = document.getElementById('stop-btn');
+const swatches        = document.querySelectorAll('.color-swatch');
+const customColor     = document.getElementById('custom-color');
+const intensitySlider = document.getElementById('intensity-slider');
+const intensityVal    = document.getElementById('intensity-val');
+const intensityRow    = document.getElementById('intensity-row');
+const exportBtn       = document.getElementById('export-btn');
+const exportStatus    = document.getElementById('export-status');
+const progressWrap    = document.getElementById('progress-wrap');
+const progressBar     = document.getElementById('progress-bar');
+
+let currentAnim      = null;
+let currentColor     = '#1a1208';
+let currentIntensity = 1;
+let currentFontSize  = 5;
+let currentText      = 'Titolo';
+
+const dynStyle = document.createElement('style');
+document.head.appendChild(dynStyle);
+
+function buildWiggleKeyframes(t) {
+  const sk  = (1.2 * t).toFixed(3);
+  const sky = (0.25 * t).toFixed(3);
+  const tx  = (2 * t).toFixed(2);
+  const ty  = (1.5 * t).toFixed(2);
+  return `
+@keyframes wiggle {
+  0%   { transform: skewX(0deg)      skewY(0deg)       translateY(${ty}px); }
+  17%  { transform: skewX(${sk}deg)  skewY(${sky}deg)  translate(-${tx}px, -${tx}px); }
+  32%  { transform: skewX(${(sk*0.8).toFixed(3)}deg) skewY(${(sky*0.4).toFixed(3)}deg) translate(0px, 0px); }
+  48%  { transform: skewX(0deg)      skewY(0deg)       translate(0px, 0px); }
+  63%  { transform: skewX(-${sk}deg) skewY(-${sky}deg) translate(${tx}px, 0px); }
+  79%  { transform: skewX(-${(sk*0.8).toFixed(3)}deg) skewY(${sky}deg) translate(0px, -${tx}px); }
+  100% { transform: skewX(0deg)      skewY(0deg)       translate(0px, 0px); }
+}`;
+}
+
+function injectKeyframes(anim, t) {
+  let css = '';
+  if (anim === 'wiggle') css = buildWiggleKeyframes(t);
+  dynStyle.textContent = css;
+}
+
+const feTurb       = document.getElementById('fe-turb');
+const feDisp       = document.getElementById('fe-disp');
+const feTurbStatic = document.getElementById('fe-turb-static');
+const feDispStatic = document.getElementById('fe-disp-static');
+
+const DISP_BASE = 6;
+let turbRaf = null, turbSeed = 1, turbFrame = 0;
+
+function tickTurbulence() {
+  turbFrame++;
+  if (turbFrame % 4 === 0) {
+    turbSeed = (turbSeed % 999) + 1;
+    feTurb.setAttribute('seed', turbSeed);
+    feTurbStatic.setAttribute('seed', turbSeed);
+  }
+  turbRaf = requestAnimationFrame(tickTurbulence);
+}
+
+function startDisplacement(intensity) {
+  feDisp.setAttribute('scale',       (DISP_BASE * intensity).toFixed(1));
+  feDispStatic.setAttribute('scale', (DISP_BASE * intensity * 0.45).toFixed(1));
+  if (!turbRaf) tickTurbulence();
+}
+
+function stopDisplacement() {
+  if (turbRaf) { cancelAnimationFrame(turbRaf); turbRaf = null; }
+  feDisp.setAttribute('scale', '0');
+  feDispStatic.setAttribute('scale', '0');
+}
+
+function updateText(val) {
+  currentText = val || ' ';
+  previewText.setAttribute('data-text', currentText);
+  previewText.querySelector('.wiggle-static').textContent  = currentText;
+  previewText.querySelector('.wiggle-animated').textContent = currentText;
+}
+
+function setAnim(anim) {
+  previewWrap.classList.remove('anim-wiggle');
+  stopDisplacement();
+  previewText.querySelector('.wiggle-static').textContent  = currentText;
+  previewText.querySelector('.wiggle-animated').textContent = currentText;
+  if (anim) {
+    previewWrap.classList.add('anim-' + anim);
+    injectKeyframes(anim, currentIntensity);
+    if (anim === 'wiggle') startDisplacement(currentIntensity);
+    intensityRow.classList.add('visible');
+  } else {
+    dynStyle.textContent = '';
+    intensityRow.classList.remove('visible');
+  }
+  currentAnim = anim;
+  animBtns.forEach(b => b.classList.toggle('active', b.dataset.anim === anim));
+}
+
+function setIntensity(t) {
+  currentIntensity = t;
+  intensityVal.textContent = t.toFixed(1) + '×';
+  if (!currentAnim) return;
+  injectKeyframes(currentAnim, t);
+  if (currentAnim === 'wiggle') {
+    feDisp.setAttribute('scale',       (DISP_BASE * t).toFixed(1));
+    feDispStatic.setAttribute('scale', (DISP_BASE * t * 0.45).toFixed(1));
+  }
+}
+
+function setColor(color) {
+  currentColor = color;
+  previewText.style.color = color;
+  swatches.forEach(s => s.classList.toggle('active', s.dataset.color === color));
+}
+
+textInput.addEventListener('input', () => updateText(textInput.value));
+sizeSlider.addEventListener('input', () => {
+  currentFontSize = parseFloat(sizeSlider.value);
+  previewText.style.fontSize = currentFontSize + 'rem';
+  sizeVal.textContent = currentFontSize + 'rem';
+});
+intensitySlider.addEventListener('input', () => setIntensity(parseFloat(intensitySlider.value)));
+animBtns.forEach(btn => btn.addEventListener('click', () => setAnim(btn.dataset.anim)));
+stopBtn.addEventListener('click', () => setAnim(null));
+swatches.forEach(s => s.addEventListener('click', () => setColor(s.dataset.color)));
+customColor.addEventListener('input', () => setColor(customColor.value));
+
+updateText('Titolo');
+
+/* ============================================================
+   EXPORT – WebP animato con alpha reale
+   ============================================================ */
+
+const EXPORT_W   = 1920;
+const EXPORT_H   = 400;
+const EXPORT_FPS = 15;   // WebP animated: 15fps è fluido e file più leggero
+const EXPORT_DUR = 4;    // 4 sec loop (poi CapCut lo looppa)
+
+exportBtn.addEventListener('click', startExport);
+
+/* ─── MAIN EXPORT ──────────────────────────────────────────── */
+async function startExport() {
+  if (!currentAnim) { exportStatus.textContent = 'Attiva prima un\'animazione!'; return; }
+
+  exportBtn.disabled = true;
+  progressWrap.classList.add('visible');
+  progressBar.style.width = '0%';
+  exportStatus.textContent = 'Preparazione...';
+
+  try {
+    await exportGIF();
+  } catch(e) {
+    exportStatus.textContent = '✗ Errore: ' + e.message;
+    exportBtn.disabled = false;
+    progressWrap.classList.remove('visible');
+    console.error(e);
+  }
+}
+
+/* ─── WebP ANIMATO con alpha ───────────────────────────────── */
+async function exportAnimatedWebP(canvas, ctx, drawFrame) {
+  const totalFrames = EXPORT_FPS * EXPORT_DUR;
+  const frameDelay  = Math.round(1000 / EXPORT_FPS); // ms per frame
+
+  exportStatus.textContent = 'Rendering frames...';
+
+  // Raccoglie i DataURL di ogni frame PNG (con alpha)
+  const frameDataURLs = [];
+  for (let i = 0; i < totalFrames; i++) {
+    drawFrame(i);
+    frameDataURLs.push(canvas.toDataURL('image/png'));
+    if (i % 5 === 0) {
+      progressBar.style.width = ((i / totalFrames) * 50).toFixed(1) + '%';
+      exportStatus.textContent = `Frame ${i+1}/${totalFrames}...`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  exportStatus.textContent = 'Assemblaggio WebP animato...';
+  progressBar.style.width = '55%';
+
+  // Costruisce WebP animato in pure JS
+  const webpBytes = await buildAnimatedWebP(frameDataURLs, frameDelay);
+  progressBar.style.width = '100%';
+
+  const blob = new Blob([webpBytes], { type: 'image/webp' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `handwrite_${currentText.trim()||'titolo'}_alpha.webp`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  exportBtn.disabled = false;
+  progressWrap.classList.remove('visible');
+  exportStatus.textContent = '✓ WebP scaricato! Importalo in CapCut come overlay.';
+  setTimeout(() => exportStatus.textContent = '', 5000);
+}
+
+/* ─── Builder WebP animato (RIFF/WebP puro JS) ────────────── */
+async function buildAnimatedWebP(dataURLs, frameDelayMs) {
+  // Converte ogni DataURL PNG → ImageBitmap → canvas piccolo → WebP lossy frame
+  // Poi assembla con RIFF ANIM container
+
+  const frames = [];
+  for (let i = 0; i < dataURLs.length; i++) {
+    const img = await loadImage(dataURLs[i]);
+    // Usa canvas per estrarre i pixel RGBA
+    const fc = document.createElement('canvas');
+    fc.width = img.width; fc.height = img.height;
+    const fctx = fc.getContext('2d');
+    fctx.drawImage(img, 0, 0);
+    // Ottieni WebP lossless con alpha dal canvas
+    const webpDataURL = fc.toDataURL('image/webp', 0.92);
+    const base64 = webpDataURL.split(',')[1];
+    const binary = atob(base64);
+    const bytes  = new Uint8Array(binary.length);
+    for (let j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
+    frames.push(bytes);
+
+    if (i % 5 === 0) {
+      progressBar.style.width = (55 + (i / dataURLs.length) * 40).toFixed(1) + '%';
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  // Assembla RIFF WebP animato
+  return assembleWebPAnim(frames, frameDelayMs, EXPORT_W, EXPORT_H);
+}
+
+function loadImage(dataURL) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = dataURL;
+  });
+}
+
+/* ─── RIFF WebP ANIM assembler ─────────────────────────────── */
+function assembleWebPAnim(frames, frameDelayMs, w, h) {
+  // Ogni frame WebP singolo ha struttura: RIFF????WEBPVP8 o VP8L
+  // Dobbiamo estrarre il bitstream VP8/VP8L da ogni frame e wrapparlo in ANMF
+
+  const anmfChunks = frames.map((frameBytes, idx) => {
+    // Estrai payload VP8x/VP8L/VP8 dal WebP singolo
+    // Un WebP single: RIFF[4] size[4] WEBP[4] chunk_id[4] chunk_size[4] data...
+    const vp8payload = extractVP8Payload(frameBytes);
+    const isLossless = vp8payload.tag === 'VP8L';
+    const isAlpha    = vp8payload.tag === 'VP8 ' || vp8payload.tag === 'VP8L';
+
+    // ANMF chunk: chunk_id[4] size[4] frame_x[3] frame_y[3] width[3] height[3] duration[3] flags[1] data
+    const delay = frameDelayMs & 0xFFFFFF;
+    const fw = (w - 1) & 0x3FFF; // canvas width -1 encoded as 14 bits
+    const fh = (h - 1) & 0x3FFF;
+
+    // inner: VP8L (o VP8) chunk wrapping
+    const innerTag = vp8payload.tag;
+    const innerData = vp8payload.data;
+    const innerChunk = makeChunk(innerTag, innerData);
+
+    // ANMF payload: X(3) Y(3) W(3) H(3) Duration(3) Flags(1) + inner
+    const anmfPayload = new Uint8Array(16 + innerChunk.length);
+    // X offset (24bit LE, /2)
+    anmfPayload[0]=0; anmfPayload[1]=0; anmfPayload[2]=0;
+    // Y offset
+    anmfPayload[3]=0; anmfPayload[4]=0; anmfPayload[5]=0;
+    // Width -1 (24bit LE)
+    anmfPayload[6]=(fw)&0xFF; anmfPayload[7]=(fw>>8)&0xFF; anmfPayload[8]=(fw>>16)&0xFF;
+    // Height -1
+    anmfPayload[9]=(fh)&0xFF; anmfPayload[10]=(fh>>8)&0xFF; anmfPayload[11]=(fh>>16)&0xFF;
+    // Duration
+    anmfPayload[12]=delay&0xFF; anmfPayload[13]=(delay>>8)&0xFF; anmfPayload[14]=(delay>>16)&0xFF;
+    // Flags: bit0=1 use alpha blending, bit1=0 do not dispose
+    anmfPayload[15] = isLossless ? 0x02 : 0x02;
+    anmfPayload.set(innerChunk, 16);
+
+    return makeChunk('ANMF', anmfPayload);
+  });
+
+  // VP8X chunk (extended features: animation + alpha)
+  const vp8x = new Uint8Array(10);
+  // flags: bit 1 (animation) = 0x02, bit 4 (alpha) = 0x10 → 0x12
+  vp8x[0] = 0x12; vp8x[1]=0; vp8x[2]=0; vp8x[3]=0;
+  // canvas width -1 (24bit LE)
+  const cw = (w-1), ch = (h-1);
+  vp8x[4]=cw&0xFF; vp8x[5]=(cw>>8)&0xFF; vp8x[6]=(cw>>16)&0xFF;
+  vp8x[7]=ch&0xFF; vp8x[8]=(ch>>8)&0xFF; vp8x[9]=(ch>>16)&0xFF;
+
+  // ANIM chunk (global animation params)
+  const anim = new Uint8Array(6);
+  // background color BGRA = 0x00000000 (transparent)
+  anim[0]=0; anim[1]=0; anim[2]=0; anim[3]=0;
+  // loop count = 0 (infinite)
+  anim[4]=0; anim[5]=0;
+
+  const vp8xChunk  = makeChunk('VP8X', vp8x);
+  const animChunk  = makeChunk('ANIM', anim);
+  const allChunks  = concat([vp8xChunk, animChunk, ...anmfChunks]);
+
+  // RIFF header
+  const riff = new Uint8Array(12 + allChunks.length);
+  riff[0]=0x52; riff[1]=0x49; riff[2]=0x46; riff[3]=0x46; // RIFF
+  const fileSize = 4 + allChunks.length;
+  riff[4]=fileSize&0xFF; riff[5]=(fileSize>>8)&0xFF;
+  riff[6]=(fileSize>>16)&0xFF; riff[7]=(fileSize>>24)&0xFF;
+  riff[8]=0x57; riff[9]=0x45; riff[10]=0x42; riff[11]=0x50; // WEBP
+  riff.set(allChunks, 12);
+  return riff;
+}
+
+function extractVP8Payload(webpBytes) {
+  // Skip RIFF(4) + size(4) + WEBP(4) = 12 bytes
+  let offset = 12;
+  while (offset < webpBytes.length - 8) {
+    const tag = String.fromCharCode(webpBytes[offset],webpBytes[offset+1],webpBytes[offset+2],webpBytes[offset+3]);
+    const sz  = webpBytes[offset+4] | (webpBytes[offset+5]<<8) | (webpBytes[offset+6]<<16) | (webpBytes[offset+7]<<24);
+    const data = webpBytes.slice(offset+8, offset+8+sz);
+    if (tag === 'VP8 ' || tag === 'VP8L' || tag === 'VP8X') {
+      return { tag, data };
+    }
+    offset += 8 + sz + (sz % 2); // chunks are word-aligned
+  }
+  // fallback: return everything after header
+  return { tag: 'VP8L', data: webpBytes.slice(12) };
+}
+
+function makeChunk(tag, data) {
+  const tagBytes = [tag.charCodeAt(0),tag.charCodeAt(1),tag.charCodeAt(2),tag.charCodeAt(3)];
+  const sz = data.length;
+  const chunk = new Uint8Array(8 + sz + (sz%2));
+  chunk[0]=tagBytes[0]; chunk[1]=tagBytes[1]; chunk[2]=tagBytes[2]; chunk[3]=tagBytes[3];
+  chunk[4]=sz&0xFF; chunk[5]=(sz>>8)&0xFF; chunk[6]=(sz>>16)&0xFF; chunk[7]=(sz>>24)&0xFF;
+  chunk.set(data, 8);
+  return chunk;
+}
+
+function concat(arrays) {
+  const total = arrays.reduce((s,a)=>s+a.length,0);
+  const out   = new Uint8Array(total);
+  let off = 0;
+  for (const a of arrays) { out.set(a,off); off+=a.length; }
+  return out;
+}
+
+/* ─── GIF ANIMATA – cattura DOM reale ──────────────────────── */
+async function exportGIF() {
+  // ── Parametri esportazione identici all'anteprima ──────────
+  // GIF_FPS deve corrispondere alla "velocità percepita" dell'anteprima.
+  // L'animazione wiggle dura 550ms → un ciclo completo.
+  // Usiamo 15fps: frameDelayCs = 7 (≈66ms) → preciso per il loop 550ms.
+  const GIF_W   = 1000;
+  const GIF_H   = 400;
+  const GIF_FPS = 15;           // identico a EXPORT_FPS del resto del tool
+  const GIF_DUR = 4;            // secondi di loop
+  const ANIM_DUR_MS = 550;      // durata keyframe wiggle (da CSS)
+  // Turb seed: nell'anteprima cambia ogni 4 rAF tick @ ~60fps → ogni ~66.7ms
+  const TURB_TICK_MS = 1000 / 60 * 4; // 66.67ms
+
+  const totalFrames  = GIF_FPS * GIF_DUR;                // 60
+  const frameDelayCs = Math.round(100 / GIF_FPS);        // cs (centisec) per GIF
+  const frameDurMs   = 1000 / GIF_FPS;                   // ms reali per frame
+
+  // ── Elementi DOM ────────────────────────────────────────────
+  const animatedSpan = previewText.querySelector('.wiggle-animated');
+  const staticSpan   = previewText.querySelector('.wiggle-static');
+  const prevWrapBg   = previewWrap.style.background;
+
+  // Ferma RAF turbulence live (lo replicheremo manualmente per ogni frame)
+  const origTurbSeed = turbSeed;
+  if (turbRaf) { cancelAnimationFrame(turbRaf); turbRaf = null; }
+
+  // ── Leggi il TTF locale e convertilo in base64 per embeddarlo inline ──
+  exportStatus.textContent = 'Caricamento font...';
+  await new Promise(r => setTimeout(r, 0));
+  let inlineFontFace = '';
+  try {
+    const resp = await fetch('img/ShadowsIntoLight-Regular.ttf');
+    const buf  = await resp.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    const b64 = btoa(bin);
+    inlineFontFace = `@font-face { font-family: 'Shadows Into Light'; font-style: normal; font-weight: 400; src: url('data:font/truetype;base64,${b64}') format('truetype'); }\n`;
+  } catch(e) {
+    console.error('Font load error:', e);
+    inlineFontFace = '';
+  }
+
+  // ── Canvas di rendering ─────────────────────────────────────
+  const gifCanvas = document.createElement('canvas');
+  gifCanvas.width  = GIF_W;
+  gifCanvas.height = GIF_H;
+  const gifCtx = gifCanvas.getContext('2d');
+
+  // Dimensioni reali del preview-wrap nel DOM
+  const pw = previewWrap.offsetWidth;   // 500
+  const ph = previewWrap.offsetHeight;  // 180
+  const scale = GIF_W / pw;             // 2×
+
+  // Prepara sfondo trasparente per la cattura
+  previewWrap.style.background = 'transparent';
+
+  // ── Helper: serializza il DOM del preview in SVG foreignObject ──
+  // Questo è l'unico metodo browser-nativo che preserva filtri SVG + CSS animations.
+  function serializeNodeToDataURL(node, w, h) {
+    // Clona il nodo e inline tutti gli stili computati
+    const clone = node.cloneNode(true);
+
+    // Copia stili computati sul clone (necessario perché SVG foreignObject
+    // non eredita i fogli CSS della pagina)
+    function inlineStyles(src, dst) {
+      const cs = window.getComputedStyle(src);
+      // Copia solo le proprietà rilevanti per evitare rallentamenti
+      const props = [
+        'font-family','font-size','font-weight','font-style',
+        'color','text-align','line-height','white-space',
+        'position','top','left','width','height','transform',
+        'display','flex-direction','justify-content','align-items',
+        'flex-wrap','animation-name','animation-duration',
+        'animation-timing-function','animation-iteration-count',
+        'animation-play-state','animation-delay','filter',
+        'user-select','overflow','box-sizing','letter-spacing',
+      ];
+      props.forEach(p => {
+        try { dst.style[p] = cs.getPropertyValue(p); } catch(_) {}
+      });
+      const srcChildren = src.children;
+      const dstChildren = dst.children;
+      for (let i = 0; i < srcChildren.length; i++) {
+        if (dstChildren[i]) inlineStyles(srcChildren[i], dstChildren[i]);
+      }
+    }
+    inlineStyles(node, clone);
+
+    // Includi i @font-face e i keyframes della pagina nel foreignObject
+    const styleSheets = Array.from(document.styleSheets);
+    let cssText = '';
+    styleSheets.forEach(ss => {
+      try {
+        Array.from(ss.cssRules || []).forEach(r => { cssText += r.cssText + '\n'; });
+      } catch(_) {}
+    });
+    // Aggiungi anche i keyframes dinamici (dynStyle)
+    cssText += dynStyle.textContent;
+
+    // FONT FIX: il foreignObject SVG non carica i <link> esterni della pagina.
+    // Importiamo i font direttamente nel foglio di stile del clone,
+    // e sovrascriviamo esplicitamente font-family su tutti gli elementi.
+    const localFontFace = inlineFontFace || "@font-face { font-family: 'Shadows Into Light'; src: local('Shadows Into Light'); }\n";
+    cssText = localFontFace + cssText;
+    // Regola che forza il font su qualsiasi elemento dentro il clone
+    cssText += "\n* { font-family: 'Shadows Into Light', cursive !important; }\n";
+
+    const styleEl = document.createElement('style');
+    styleEl.textContent = cssText;
+
+    // Includi il filtro SVG (wiggle-disp) che è fuori dal previewWrap
+    const svgFilters = document.querySelector('svg defs');
+    let svgFilterStr = '';
+    if (svgFilters) {
+      // Serializza il blocco SVG dei filtri e inseriscilo come elemento separato
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svgEl.setAttribute('width', '0');
+      svgEl.setAttribute('height', '0');
+      svgEl.style.position = 'absolute';
+      svgEl.appendChild(svgFilters.cloneNode(true));
+      svgFilterStr = new XMLSerializer().serializeToString(svgEl);
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.style.width  = w + 'px';
+    wrapper.style.height = h + 'px';
+    wrapper.style.overflow = 'hidden';
+    wrapper.appendChild(styleEl);
+    if (svgFilterStr) {
+      const svgDiv = document.createElement('div');
+      svgDiv.innerHTML = svgFilterStr;
+      wrapper.appendChild(svgDiv.firstChild);
+    }
+    wrapper.appendChild(clone);
+
+    const xml = new XMLSerializer().serializeToString(wrapper);
+    const encoded = encodeURIComponent(xml);
+    const svgSrc  = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+      <foreignObject width="100%" height="100%">
+        <html xmlns="http://www.w3.org/1999/xhtml">${xml}</html>
+      </foreignObject>
+    </svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgSrc);
+  }
+
+  // ── Cattura un frame DOM → ImageData ───────────────────────
+  function captureFrame() {
+    return new Promise((resolve) => {
+      const dataURL = serializeNodeToDataURL(previewWrap, pw, ph);
+      const img = new Image();
+      img.onload = () => {
+        gifCtx.clearRect(0, 0, GIF_W, GIF_H);
+        // Disegna scalato e centrato verticalmente
+        const drawH = ph * scale;
+        const drawY = Math.round((GIF_H - drawH) / 2);
+        gifCtx.drawImage(img, 0, drawY, GIF_W, drawH);
+        resolve(gifCtx.getImageData(0, 0, GIF_W, GIF_H));
+      };
+      img.onerror = () => {
+        // Fallback: frame vuoto
+        gifCtx.clearRect(0, 0, GIF_W, GIF_H);
+        resolve(gifCtx.getImageData(0, 0, GIF_W, GIF_H));
+      };
+      img.src = dataURL;
+    });
+  }
+
+  // ── Reset font-family nel DOM (wiggle usa sempre Shadows Into Light) ──
+  previewText.style.fontFamily = "'Shadows Into Light', cursive";
+  if (animatedSpan) animatedSpan.style.fontFamily = "'Shadows Into Light', cursive";
+  staticSpan.style.fontFamily = "'Shadows Into Light', cursive";
+
+  exportStatus.textContent = 'Rendering frame GIF...';
+  await new Promise(r => setTimeout(r, 0));
+
+  // ── Ciclo cattura frame ─────────────────────────────────────
+  const frames = [];
+
+  for (let i = 0; i < totalFrames; i++) {
+    const timeMs = i * frameDurMs;
+
+    // 1. Sincronizza seed turbulence con il tempo esatto del frame
+    //    Nell'anteprima: turbFrame++ ogni rAF; if (turbFrame % 4 === 0) seed++
+    //    → seed cambia ogni 4 rAF tick ≈ ogni TURB_TICK_MS ms
+    const targetSeed = (Math.floor(timeMs / TURB_TICK_MS) % 999) + 1;
+    if (targetSeed !== turbSeed) {
+      turbSeed = targetSeed;
+      feTurb.setAttribute('seed', turbSeed);
+      feTurbStatic.setAttribute('seed', turbSeed);
+    }
+
+    // 2. Congela animazione CSS wiggle al momento preciso del frame
+    if (currentAnim === 'wiggle' && animatedSpan) {
+      animatedSpan.style.animationPlayState = 'paused';
+      // animation-delay negativo = posizione nella timeline
+      animatedSpan.style.animationDelay = (-((timeMs % ANIM_DUR_MS))).toFixed(2) + 'ms';
+    }
+
+    // 3. Font sempre Shadows Into Light su tutti gli elementi
+    previewText.style.fontFamily = "'Shadows Into Light', cursive";
+    if (animatedSpan) animatedSpan.style.fontFamily = "'Shadows Into Light', cursive";
+    staticSpan.style.fontFamily = "'Shadows Into Light', cursive";
+
+    // 4. Forza reflow DOM + attendi che il browser aggiorni il rendering
+    previewWrap.getBoundingClientRect();
+    // Due tick: uno per reflow, uno per paint
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // 5. Cattura il frame
+    const frameData = await captureFrame();
+    frames.push(frameData);
+
+    progressBar.style.width = ((i / totalFrames) * 55).toFixed(1) + '%';
+    exportStatus.textContent = `Cattura frame ${i + 1}/${totalFrames}...`;
+  }
+
+  // ── Ripristina stato preview ────────────────────────────────
+  previewWrap.style.background = prevWrapBg;
+  if (animatedSpan) {
+    animatedSpan.style.animationPlayState = '';
+    animatedSpan.style.animationDelay     = '';
+  }
+  turbSeed = origTurbSeed;
+  feTurb.setAttribute('seed', turbSeed);
+  feTurbStatic.setAttribute('seed', turbSeed);
+  if (currentAnim === 'wiggle') startDisplacement(currentIntensity);
+
+  // ── 5. Palette + encoding GIF ─────────────────────────────
+  exportStatus.textContent = 'Costruzione palette...';
+  progressBar.style.width = '55%';
+  await new Promise(r => setTimeout(r, 0));
+
+  const palette = buildFastPalette(frames, GIF_W, GIF_H, 255);
+  const TRANSPARENT_IDX = 255;
+
+  exportStatus.textContent = 'Encoding GIF...';
+  progressBar.style.width = '60%';
+  await new Promise(r => setTimeout(r, 0));
+
+  let gifBytes;
+  try {
+    gifBytes = await encodeGIF(frames, palette, TRANSPARENT_IDX, frameDelayCs, GIF_W, GIF_H);
+  } catch(e) {
+    exportStatus.textContent = '✗ Encoding fallito: ' + e.message;
+    exportBtn.disabled = false;
+    progressWrap.classList.remove('visible');
+    console.error(e);
+    return;
+  }
+
+  progressBar.style.width = '100%';
+
+  const blob = new Blob([gifBytes], { type: 'image/gif' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `handwrite_${currentText.trim()||'titolo'}_alpha.gif`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  exportBtn.disabled = false;
+  progressWrap.classList.remove('visible');
+  exportStatus.textContent = '✓ GIF esportata!';
+  setTimeout(() => exportStatus.textContent = '', 5000);
+}
+
+/* ─── Palette veloce (campionamento uniforme) ──────────────── */
+function buildFastPalette(frames, w, h, maxColors) {
+  // Raccoglie campione di colori opachi
+  const buckets = {};
+  const step = 8; // quantizza ogni canale a multipli di 8 → max 32³ = 32768 combinazioni
+
+  for (const f of frames) {
+    const d = f.data;
+    for (let p = 0; p < d.length; p += 4 * 4) { // salta 4 pixel alla volta
+      if (d[p+3] < 128) continue;
+      const r = d[p]   & ~(step-1);
+      const g = d[p+1] & ~(step-1);
+      const b = d[p+2] & ~(step-1);
+      const key = (r << 16) | (g << 8) | b;
+      buckets[key] = (buckets[key] || 0) + 1;
+    }
+  }
+
+  // Prendi i maxColors colori più frequenti
+  const sorted = Object.entries(buckets)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxColors)
+    .map(([key]) => {
+      const k = parseInt(key);
+      return [(k >> 16) & 0xFF, (k >> 8) & 0xFF, k & 0xFF];
+    });
+
+  // Pad a 256
+  while (sorted.length < 256) sorted.push([0, 0, 0]);
+  return sorted;
+}
+
+/* ─── GIF encoder ──────────────────────────────────────────── */
+async function encodeGIF(frames, palette, transparentIdx, frameDelayCs, w, h) {
+  const out = [];
+  const byte = v => out.push(v & 0xFF);
+  const word = v => { out.push(v & 0xFF); out.push((v >> 8) & 0xFF); };
+  const str  = s => { for (let i = 0; i < s.length; i++) out.push(s.charCodeAt(i)); };
+
+  // Header
+  str('GIF89a');
+  word(w); word(h);
+  byte(0b11110111); // GCT presente, 256 colori
+  byte(0); byte(0);
+
+  // Global Color Table
+  for (let i = 0; i < 256; i++) {
+    const c = palette[i] || [0,0,0];
+    byte(c[0]); byte(c[1]); byte(c[2]);
+  }
+
+  // Netscape loop infinito
+  byte(0x21); byte(0xFF); byte(0x0B);
+  str('NETSCAPE2.0');
+  byte(3); byte(1); word(0); byte(0);
+
+  // Cache quantizzazione con lookup table
+  // Costruisce lookup table R/G/B → palette index (con passo 8)
+  const lut = new Uint8Array(32 * 32 * 32);
+  lut.fill(0);
+  // Per ogni colore della palette trova il bin più vicino nella griglia 32³
+  for (let pi = 0; pi < 255; pi++) {
+    const [pr, pg, pb] = palette[pi];
+    const ri = Math.round(pr / 8), gi = Math.round(pg / 8), bi = Math.round(pb / 8);
+    const idx = (Math.min(ri,31) << 10) | (Math.min(gi,31) << 5) | Math.min(bi,31);
+    // Riempie cella se non già assegnata (primo arrivato = colore dominante)
+    if (lut[idx] === 0 && pi !== 0) lut[idx] = pi;
+  }
+  // Assegna tutte le celle vuote al colore di palette più vicino
+  for (let r = 0; r < 32; r++) for (let g = 0; g < 32; g++) for (let b = 0; b < 32; b++) {
+    const idx = (r << 10) | (g << 5) | b;
+    if (lut[idx] === 0) {
+      // Cerca più vicino
+      let best = 0, bestD = Infinity;
+      for (let pi = 0; pi < 255; pi++) {
+        const [pr, pg, pb] = palette[pi];
+        const d = (r*8-pr)**2 + (g*8-pg)**2 + (b*8-pb)**2;
+        if (d < bestD) { bestD = d; best = pi; }
+      }
+      lut[idx] = best;
+    }
+  }
+
+  for (let fi = 0; fi < frames.length; fi++) {
+    if (fi % 4 === 0) {
+      progressBar.style.width = (45 + (fi / frames.length) * 50).toFixed(1) + '%';
+      exportStatus.textContent = `Encoding frame ${fi+1}/${frames.length}...`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    const d = frames[fi].data;
+
+    // Graphic Control Extension — Disposal=2 (restore to bg), transparent
+    byte(0x21); byte(0xF9); byte(4);
+    byte(0b00001101); // disposal=2, transparent=1
+    word(frameDelayCs);
+    byte(transparentIdx);
+    byte(0);
+
+    // Image Descriptor
+    byte(0x2C);
+    word(0); word(0); word(w); word(h);
+    byte(0);
+
+    // Quantizza pixel → indici
+    const indices = new Uint8Array(w * h);
+    for (let p = 0; p < w * h; p++) {
+      const o = p * 4;
+      if (d[o+3] < 128) {
+        indices[p] = transparentIdx;
+      } else {
+        const ri = Math.min(d[o]   >> 3, 31);
+        const gi = Math.min(d[o+1] >> 3, 31);
+        const bi = Math.min(d[o+2] >> 3, 31);
+        indices[p] = lut[(ri << 10) | (gi << 5) | bi];
+      }
+    }
+
+    // LZW + sub-blocks
+    const lzwMin = 8;
+    const compressed = lzwEncode(indices, lzwMin);
+    byte(lzwMin);
+    let ci = 0;
+    while (ci < compressed.length) {
+      const bs = Math.min(255, compressed.length - ci);
+      byte(bs);
+      for (let bi2 = 0; bi2 < bs; bi2++) byte(compressed[ci++]);
+    }
+    byte(0);
+  }
+
+  byte(0x3B); // Trailer
+  return new Uint8Array(out);
+}
+
+/* ─── LZW encoder per GIF – versione veloce con hash int32 ─── */
+function lzwEncode(indices, minCodeSize) {
+  const clearCode = 1 << minCodeSize;
+  const eofCode   = clearCode + 1;
+  let codeSize    = minCodeSize + 1;
+  let nextCode    = eofCode + 1;
+
+  // Output bit stream
+  const output = [];
+  let curByte = 0, curBits = 0;
+
+  function emitCode(code) {
+    curByte |= code << curBits;
+    curBits += codeSize;
+    while (curBits >= 8) {
+      output.push(curByte & 0xFF);
+      curByte >>= 8;
+      curBits  -= 8;
+    }
+  }
+
+  // Hash table a indirizzamento aperto: key = (prefixCode << 8) | pixelByte
+  // Dimensione potenza di 2, > 4096*2 per load factor basso
+  const HASH_SIZE = 16384; // 2^14, sempre > 4096 entry max LZW
+  const HASH_MASK = HASH_SIZE - 1;
+  // hashKeys[i] = chiave int32 (-1 = vuota), hashVals[i] = codice
+  const hashKeys = new Int32Array(HASH_SIZE).fill(-1);
+  const hashVals = new Int32Array(HASH_SIZE);
+
+  function resetTable() {
+    hashKeys.fill(-1);
+    // Entries 0..clearCode-1 sono i codici primitivi (prefisso = -1, non servono in lookup
+    // perché un singolo pixel viene gestito direttamente come prefixCode = pixels[i])
+    codeSize = minCodeSize + 1;
+    nextCode = eofCode + 1;
+  }
+
+  function hashLookup(prefix, pixel) {
+    // Chiave int32: 20 bit prefix (max 4095) + 8 bit pixel = 28 bit → sicuro in int32
+    const key = (prefix << 8) | pixel;
+    let slot = (key * 2654435761) & HASH_MASK; // Knuth multiplicative hash
+    while (true) {
+      const k = hashKeys[slot];
+      if (k === -1) return ~slot;   // vuoto: restituisce ~slot (negativo)
+      if (k === key) return slot;   // trovato
+      slot = (slot + 1) & HASH_MASK; // linear probing
+    }
+  }
+
+  function tableSet(prefix, pixel, code) {
+    const key = (prefix << 8) | pixel;
+    let slot = (key * 2654435761) & HASH_MASK;
+    while (hashKeys[slot] !== -1) slot = (slot + 1) & HASH_MASK;
+    hashKeys[slot] = key;
+    hashVals[slot] = code;
+  }
+
+  resetTable();
+  emitCode(clearCode);
+
+  let prefixCode = indices[0]; // primo pixel: codice primitivo = valore pixel
+  for (let i = 1; i < indices.length; i++) {
+    const pixel = indices[i];
+    const slot  = hashLookup(prefixCode, pixel);
+    if (slot >= 0) {
+      // Sequenza già in tabella: estendi buffer
+      prefixCode = hashVals[slot];
+    } else {
+      emitCode(prefixCode);
+      if (nextCode < 4096) {
+        tableSet(prefixCode, pixel, nextCode++);
+        if (nextCode > (1 << codeSize)) codeSize++;
+      } else {
+        // Tabella piena: reset
+        emitCode(clearCode);
+        resetTable();
+      }
+      prefixCode = pixel;
+    }
+  }
+  emitCode(prefixCode);
+  emitCode(eofCode);
+  if (curBits > 0) output.push(curByte & 0xFF);
+  return output;
+}
+
+
+async function exportWebM(canvas, ctx, drawFrame, withAlpha) {
+  if (withAlpha) {
+    await exportWebMAlphaWebCodecs(canvas, ctx, drawFrame);
+    return;
+  }
+  const stream = canvas.captureStream(EXPORT_FPS);
+  let mimeType = 'video/webm;codecs=vp9';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 10_000_000 });
+  const chunks = [];
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `handwrite_${currentText.trim()||'titolo'}_black.webm`; a.click();
+    URL.revokeObjectURL(url);
+    exportBtn.disabled = false;
+    progressWrap.classList.remove('visible');
+    exportStatus.textContent = '✓ WebM scaricato! In CapCut: Blending → Schermo';
+    setTimeout(() => exportStatus.textContent = '', 4000);
+  };
+  recorder.start();
+  const totalFrames = EXPORT_FPS * EXPORT_DUR;
+  let fi = 0;
+  await new Promise(resolve => {
+    function next() {
+      if (fi >= totalFrames) { recorder.stop(); resolve(); return; }
+      drawFrame(fi); fi++;
+      progressBar.style.width = ((fi / totalFrames) * 100).toFixed(1) + '%';
+      exportStatus.textContent = `Registrazione... ${Math.floor(fi / EXPORT_FPS)}s/${EXPORT_DUR}s`;
+      setTimeout(next, 1000 / EXPORT_FPS);
+    }
+    next();
+  });
+}
+
+/* ─── WebM VP9 ALPHA via WebCodecs API ─────────────────────── */
+async function exportWebMAlphaWebCodecs(canvas, ctx, drawFrame) {
+  if (!window.VideoEncoder) {
+    exportStatus.textContent = '✗ WebCodecs non supportato – usa Chrome 94+';
+    exportBtn.disabled = false;
+    progressWrap.classList.remove('visible');
+    return;
+  }
+
+  // Verifica supporto VP9 alpha
+  const vp9Support = await VideoEncoder.isConfigSupported({
+    codec: 'vp09.00.41.08',
+    width: EXPORT_W,
+    height: EXPORT_H,
+    alpha: 'keep',
+  }).catch(() => ({ supported: false }));
+
+  if (!vp9Support.supported) {
+    exportStatus.textContent = '✗ VP9 alpha non supportato da questo browser';
+    exportBtn.disabled = false;
+    progressWrap.classList.remove('visible');
+    return;
+  }
+
+  const totalFrames = EXPORT_FPS * EXPORT_DUR;
+  const frameDuration = Math.round(1_000_000 / EXPORT_FPS); // microsecondi
+
+  exportStatus.textContent = 'Rendering frames PNG...';
+
+  // Step 1: render tutti i frame come PNG blob con alpha
+  const pngBlobs = [];
+  for (let i = 0; i < totalFrames; i++) {
+    drawFrame(i);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    pngBlobs.push(blob);
+    if (i % 3 === 0) {
+      progressBar.style.width = ((i / totalFrames) * 40).toFixed(1) + '%';
+      exportStatus.textContent = `Render frame ${i+1}/${totalFrames}...`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  exportStatus.textContent = 'Encoding VP9 alpha...';
+
+  const videoChunks = [];
+  let encoderError = null;
+
+  const encoder = new VideoEncoder({
+    output: (chunk) => {
+      const buf = new Uint8Array(chunk.byteLength);
+      chunk.copyTo(buf);
+      videoChunks.push({
+        data: buf,
+        timestamp: chunk.timestamp,
+        isKey: chunk.type === 'key'
+      });
+    },
+    error: (e) => { encoderError = e; console.error('VideoEncoder:', e); }
+  });
+
+  encoder.configure({
+    codec: 'vp09.00.41.08',
+    width: EXPORT_W,
+    height: EXPORT_H,
+    bitrate: 10_000_000,
+    framerate: EXPORT_FPS,
+    alpha: 'keep',
+    latencyMode: 'quality',
+  });
+
+  // Step 2: encode ogni frame da ImageBitmap (preserva alpha)
+  for (let i = 0; i < pngBlobs.length; i++) {
+    const bitmap = await createImageBitmap(pngBlobs[i]);
+    const vf = new VideoFrame(bitmap, {
+      timestamp: i * frameDuration,
+      duration:  frameDuration,
+      alpha: 'keep',
+    });
+    encoder.encode(vf, { keyFrame: i % (EXPORT_FPS * 2) === 0 });
+    vf.close();
+    bitmap.close();
+
+    if (i % 3 === 0) {
+      progressBar.style.width = (40 + (i / totalFrames) * 40).toFixed(1) + '%';
+      exportStatus.textContent = `Encoding ${i+1}/${totalFrames}...`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    if (encoderError) break;
+  }
+
+  await encoder.flush();
+  encoder.close();
+
+  if (encoderError || videoChunks.length === 0) {
+    exportStatus.textContent = '✗ Encoding fallito: ' + (encoderError?.message || 'nessun chunk prodotto');
+    exportBtn.disabled = false;
+    progressWrap.classList.remove('visible');
+    return;
+  }
+
+  exportStatus.textContent = 'Assemblaggio WebM...';
+  progressBar.style.width = '85%';
+
+  const webmBytes = buildWebMWithAlpha(videoChunks, EXPORT_W, EXPORT_H, EXPORT_FPS);
+  progressBar.style.width = '100%';
+
+  const blob = new Blob([webmBytes], { type: 'video/webm' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `handwrite_${currentText.trim()||'titolo'}_vp9alpha.webm`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  exportBtn.disabled = false;
+  progressWrap.classList.remove('visible');
+  exportStatus.textContent = '✓ WebM VP9 Alpha scaricato!';
+  setTimeout(() => exportStatus.textContent = '', 6000);
+}
+
+/* ─── WebM container builder con alpha track ───────────────── */
+// Implementazione minimale di WebM (Matroska subset) con un video track VP9
+// Sufficiente per player e NLE che supportano VP9 alpha
+function buildWebMWithAlpha(chunks, w, h, fps) {
+  // Helper EBML encoding
+  function vintEncode(val) {
+    if (val < 0x7F) return [val | 0x80];
+    if (val < 0x3FFF) return [(val >> 8) | 0x40, val & 0xFF];
+    if (val < 0x1FFFFF) return [(val >> 16) | 0x20, (val >> 8) & 0xFF, val & 0xFF];
+    if (val < 0x0FFFFFFF) return [(val >> 24) | 0x10, (val >> 16) & 0xFF, (val >> 8) & 0xFF, val & 0xFF];
+    // unknown size
+    return [0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+  }
+
+  function encodeVint(val) { return new Uint8Array(vintEncode(val)); }
+
+  function numToBytes(val, byteLen) {
+    const b = new Uint8Array(byteLen);
+    for (let i = byteLen - 1; i >= 0; i--) { b[i] = val & 0xFF; val >>= 8; }
+    return b;
+  }
+
+  function ebmlEl(id, data) {
+    // id: Uint8Array or number array, data: Uint8Array
+    const idB   = id instanceof Uint8Array ? id : new Uint8Array(id);
+    const sizeB = encodeVint(data.length);
+    const out   = new Uint8Array(idB.length + sizeB.length + data.length);
+    out.set(idB, 0);
+    out.set(sizeB, idB.length);
+    out.set(data, idB.length + sizeB.length);
+    return out;
+  }
+
+  function ebmlElRaw(id, data) {
+    // id bytes, data already Uint8Array – no vint on data (for master elements with unknown size)
+    const idB = id instanceof Uint8Array ? id : new Uint8Array(id);
+    const sizeB = encodeVint(data.length);
+    return concat3([idB, sizeB, data]);
+  }
+
+  function concat3(arrays) {
+    const total = arrays.reduce((s, a) => s + a.length, 0);
+    const out = new Uint8Array(total);
+    let off = 0;
+    for (const a of arrays) { out.set(a, off); off += a.length; }
+    return out;
+  }
+
+  function strBytes(s) {
+    return new Uint8Array([...s].map(c => c.charCodeAt(0)));
+  }
+
+  // EBML Header
+  const ebmlHeader = ebmlEl([0x1A, 0x45, 0xDF, 0xA3], concat3([
+    ebmlEl([0x42, 0x86], new Uint8Array([0x01])),          // EBMLVersion
+    ebmlEl([0x42, 0xF7], new Uint8Array([0x01])),          // EBMLReadVersion
+    ebmlEl([0x42, 0xF2], new Uint8Array([0x04])),          // EBMLMaxIDLength
+    ebmlEl([0x42, 0xF3], new Uint8Array([0x08])),          // EBMLMaxSizeLength
+    ebmlEl([0x42, 0x82], strBytes('webm')),                // DocType
+    ebmlEl([0x42, 0x87], new Uint8Array([0x04])),          // DocTypeVersion
+    ebmlEl([0x42, 0x85], new Uint8Array([0x02])),          // DocTypeReadVersion
+  ]));
+
+  // TrackEntry
+  const codecPrivate = new Uint8Array(0); // VP9 non richiede codec private
+  const trackEntry = concat3([
+    ebmlEl([0xD7], new Uint8Array([0x01])),                // TrackNumber
+    ebmlEl([0x73, 0xC5], numToBytes(1, 8)),                // TrackUID
+    ebmlEl([0x83], new Uint8Array([0x01])),                // TrackType: video
+    ebmlEl([0x86], strBytes('V_VP9')),                     // CodecID
+    ebmlEl([0x63, 0xAA], new Uint8Array([0x01])),          // AlphaMode = 1 (alpha presente)
+    ebmlEl([0xE0], concat3([                               // Video
+      ebmlEl([0xB0], numToBytes(w, 4)),                    // PixelWidth
+      ebmlEl([0xBA], numToBytes(h, 4)),                    // PixelHeight
+    ])),
+  ]);
+
+  const tracks = ebmlEl([0x16, 0x54, 0xAE, 0x6B],
+    ebmlEl([0xAE], trackEntry)
+  );
+
+  // Info
+  const durationMs = (chunks.length / fps) * 1000;
+  const info = ebmlEl([0x15, 0x49, 0xA9, 0x66], concat3([
+    ebmlEl([0x2A, 0xD7, 0xB1], numToBytes(1000000, 8)),   // TimecodeScale = 1ms
+    ebmlEl([0x44, 0x89], (() => {                          // Duration (float64)
+      const buf = new ArrayBuffer(8);
+      new DataView(buf).setFloat64(0, durationMs, false);
+      return new Uint8Array(buf);
+    })()),
+    ebmlEl([0x4D, 0x80], strBytes('HandwriteExporter')),   // MuxingApp
+    ebmlEl([0x57, 0x41], strBytes('HandwriteExporter')),   // WritingApp
+  ]));
+
+  // Clusters: ogni cluster = 1 secondo di frames
+  const framesPerCluster = fps;
+  const clusterParts = [];
+
+  for (let ci = 0; ci * framesPerCluster < chunks.length; ci++) {
+    const startIdx   = ci * framesPerCluster;
+    const endIdx     = Math.min(startIdx + framesPerCluster, chunks.length);
+    const clusterTs  = Math.round(chunks[startIdx].timestamp / 1000); // ms
+
+    const simpleBlocks = [];
+    for (let fi = startIdx; fi < endIdx; fi++) {
+      const c   = chunks[fi];
+      const ts  = Math.round(c.timestamp / 1000) - clusterTs; // relativo al cluster, ms
+      const data = c.data;
+
+      // SimpleBlock: TrackNumber (vint) + timecode (int16 BE) + flags (1 byte) + data
+      const trackVint = new Uint8Array(vintEncode(1)); // track 1
+      const tcBytes   = new Uint8Array([(ts >> 8) & 0xFF, ts & 0xFF]);
+      const flags     = c.isKey ? 0x80 : 0x00; // keyframe flag
+
+      const sbPayload = concat3([trackVint, tcBytes, new Uint8Array([flags]), data]);
+      simpleBlocks.push(ebmlEl([0xA3], sbPayload)); // SimpleBlock ID
+    }
+
+    const clusterData = concat3([
+      ebmlEl([0xE7], numToBytes(clusterTs, 8)), // Timecode
+      ...simpleBlocks
+    ]);
+
+    clusterParts.push(ebmlEl([0x1F, 0x43, 0xB6, 0x75], clusterData));
+  }
+
+  // Segment con Info + Tracks + Clusters
+  const segmentBody = concat3([info, tracks, ...clusterParts]);
+  const segment     = ebmlEl([0x18, 0x53, 0x80, 0x67], segmentBody);
+
+  return concat3([ebmlHeader, segment]);
+}
+</script>
+</body>
+</html>
