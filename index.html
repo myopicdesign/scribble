@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Handwrite Title Generator</title>
+<title>Scribble</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
@@ -40,21 +40,16 @@ body {
   color: var(--ink);
 }
 
-h1 {
-  font-family: 'Shadows Into Light', cursive;
-  font-weight: 400;
-  font-size: 2.8rem;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
-  color: var(--ink);
-}
+h1 { display: none; }
+.subtitle { display: none; }
 
-.subtitle {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.25em;
-  color: var(--accent2);
+.logo-wrap {
   margin-bottom: 40px;
+}
+.logo-wrap img {
+  height: 80px;
+  width: auto;
+  display: block;
 }
 
 /* PREVIEW AREA */
@@ -312,8 +307,9 @@ input[type="range"]::-webkit-slider-thumb {
 </head>
 <body>
 
-<h1>Handwrite</h1>
-<p class="subtitle">Title Animation Generator</p>
+<div class="logo-wrap">
+  <img src="img/scribblelogo.png" alt="Scribble">
+</div>
 
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute">
   <defs>
@@ -746,8 +742,8 @@ async function exportGIF() {
   // GIF_FPS deve corrispondere alla "velocità percepita" dell'anteprima.
   // L'animazione wiggle dura 550ms → un ciclo completo.
   // Usiamo 15fps: frameDelayCs = 7 (≈66ms) → preciso per il loop 550ms.
-  const GIF_W   = 1000;
-  const GIF_H   = 400;
+  const GIF_W   = 2000;
+  const GIF_H   = 800;
   const GIF_FPS = 15;           // identico a EXPORT_FPS del resto del tool
   const GIF_DUR = 4;            // secondi di loop
   const ANIM_DUR_MS = 550;      // durata keyframe wiggle (da CSS)
