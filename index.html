@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scribble</title>
+<title>Scribble Title Generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
@@ -65,7 +65,7 @@ h1 { display: none; }
 #preview-text {
   font-family: 'Shadows Into Light', cursive;
   font-weight: 400;
-  font-size: 5rem;
+  font-size: 80px;
   color: var(--ink);
   line-height: 1;
   text-align: center;
@@ -122,15 +122,16 @@ h1 { display: none; }
   font-family: 'Shadows Into Light', cursive;
   font-weight: 400;
   font-size: 1.8rem;
-  background: var(--paper);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius);
-  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--ui-border);
+  border-radius: 0;
+  padding: 6px 4px;
   color: var(--ink);
   outline: none;
   transition: border-color 0.2s;
 }
-#text-input:focus { border-color: var(--accent); }
+#text-input:focus { border-bottom-color: var(--accent); }
 
 .size-row {
   display: flex;
@@ -139,6 +140,7 @@ h1 { display: none; }
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
+  font-family: 'Shadows Into Light', cursive;
 }
 
 input[type="range"] {
@@ -163,8 +165,8 @@ input[type="range"]::-webkit-slider-thumb {
   border: 1.5px solid var(--ui-border);
   background: var(--ui-bg);
   border-radius: var(--radius);
-  font-family: 'Courier New', monospace;
-  font-size: 0.72rem;
+  font-family: 'Shadows Into Light', cursive;
+  font-size: 0.92rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   cursor: pointer;
@@ -179,21 +181,22 @@ input[type="range"]::-webkit-slider-thumb {
   border: 1.5px solid var(--ui-border);
   background: transparent;
   border-radius: var(--radius);
-  font-family: 'Courier New', monospace;
-  font-size: 0.72rem;
+  font-family: 'Shadows Into Light', cursive;
+  font-size: 0.92rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   cursor: pointer;
-  color: var(--accent2);
+  color: #2e2e2e;
 }
-.stop-btn:hover { border-color: var(--accent2); }
+.stop-btn:hover { border-color: #2e2e2e; }
 
 .row-label {
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: var(--accent2);
+  color: #2e2e2e;
   min-width: 70px;
+  font-family: 'Shadows Into Light', cursive;
 }
 
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -219,6 +222,7 @@ input[type="range"]::-webkit-slider-thumb {
   letter-spacing: 0.15em;
   visibility: hidden;
   pointer-events: none;
+  font-family: 'Shadows Into Light', cursive;
 }
 .intensity-row.visible { visibility: visible; pointer-events: auto; }
 
@@ -230,6 +234,8 @@ input[type="range"]::-webkit-slider-thumb {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
 }
 
 .export-mode-row {
@@ -244,8 +250,8 @@ input[type="range"]::-webkit-slider-thumb {
   border: 1.5px solid var(--ui-border);
   background: var(--ui-bg);
   border-radius: var(--radius);
-  font-family: 'Courier New', monospace;
-  font-size: 0.68rem;
+  font-family: 'Shadows Into Light', cursive;
+  font-size: 0.88rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
   cursor: pointer;
@@ -261,8 +267,8 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--ink);
   color: var(--bg);
   border-radius: var(--radius);
-  font-family: 'Courier New', monospace;
-  font-size: 0.72rem;
+  font-family: 'Shadows Into Light', cursive;
+  font-size: 0.92rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   cursor: pointer;
@@ -276,7 +282,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 .export-hint {
   font-size: 0.62rem;
-  color: var(--accent2);
+  color: #2e2e2e;
   letter-spacing: 0.08em;
   width: 100%;
   margin-top: -8px;
@@ -284,8 +290,9 @@ input[type="range"]::-webkit-slider-thumb {
 
 #export-status {
   font-size: 0.68rem;
-  color: var(--accent2);
+  color: #2e2e2e;
   letter-spacing: 0.1em;
+  font-family: 'Shadows Into Light', cursive;
 }
 
 .progress-bar-wrap {
@@ -340,7 +347,7 @@ input[type="range"]::-webkit-slider-thumb {
   <div class="size-row">
     <span class="row-label">Dimensione</span>
     <input type="range" id="size-slider" min="2" max="12" value="5" step="0.5">
-    <span id="size-val">5rem</span>
+    <span id="size-val">80px</span>
   </div>
 
   <div class="color-row">
@@ -374,7 +381,6 @@ input[type="range"]::-webkit-slider-thumb {
   <div class="export-row">
     <div class="export-mode-row">
     </div>
-    <p class="export-hint" id="export-hint">GIF animata con trasparenza – importabile in CapCut, After Effects e ovunque</p>
     <button id="export-btn">⬇ Esporta GIF</button>
     <div class="progress-bar-wrap" id="progress-wrap">
       <div id="progress-bar"></div>
@@ -509,8 +515,9 @@ function setColor(color) {
 textInput.addEventListener('input', () => updateText(textInput.value));
 sizeSlider.addEventListener('input', () => {
   currentFontSize = parseFloat(sizeSlider.value);
-  previewText.style.fontSize = currentFontSize + 'rem';
-  sizeVal.textContent = currentFontSize + 'rem';
+  const px = Math.round(currentFontSize * 16);
+  previewText.style.fontSize = px + 'px';
+  sizeVal.textContent = px + 'px';
 });
 intensitySlider.addEventListener('input', () => setIntensity(parseFloat(intensitySlider.value)));
 animBtns.forEach(btn => btn.addEventListener('click', () => setAnim(btn.dataset.anim)));
